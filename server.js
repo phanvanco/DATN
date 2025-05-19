@@ -19,7 +19,10 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'web/data/TEST')));
 
 // API từ ESP32
-let sensorData = {};
+let sensorData = {
+    ID1: null,
+    ID2: null
+};
 
 // Endpoint nhận dữ liệu từ ESP32
 app.post('/data', (req, res) => {
@@ -28,16 +31,26 @@ app.post('/data', (req, res) => {
         console.error('No data received or invalid JSON format');
         return res.status(400).send('Invalid data format');
     }
-    sensorData = req.body; // Lưu dữ liệu vào biến
+
+    // Nếu nhận được cả ID1 và ID2 trong 1 gói
+    if (req.body.ID1 && req.body.ID2) {
+        sensorData.ID1 = req.body.ID1;
+        sensorData.ID2 = req.body.ID2;
+    } else if (req.body.ID === "ID1") {
+        sensorData.ID1 = req.body;
+    } else if (req.body.ID === "ID2") {
+        sensorData.ID2 = req.body;
+    }
+
     res.status(200).send('Data received successfully!');
 });
 
 // Endpoint trả dữ liệu cho web
 app.get('/data', (req, res) => {
-    if (Object.keys(sensorData).length === 0) {
+    if (!sensorData.ID1 && !sensorData.ID2) {
         return res.status(404).json({ error: 'No data available' });
     }
-    res.json(sensorData); // Trả dữ liệu cảm biến
+    res.json(sensorData); // Trả về cả 2 object ID1 và ID2
 });
 
 // Endpoint kiểm tra trạng thái server
